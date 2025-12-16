@@ -38,8 +38,8 @@ const (
 <script src="/_assets/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>
 <script>document.write('<script src="http://'
-    + (location.host || 'localhost').split(':')[0]
-    + ':35729/livereload.js?snipver=1"></'
+    + (location.host || 'localhost')
+    + '/_assets/livereload.js?snipver=1"></'
     + 'script>')</script>
 </head>
 <body>
@@ -69,22 +69,6 @@ func main() {
 
 	lrs := livereload.New("mkup")
 	defer lrs.Close()
-
-	go func() {
-		mux := http.NewServeMux()
-		mux.HandleFunc("/livereload.js", func(w http.ResponseWriter, r *http.Request) {
-			b, err := local.ReadFile("_assets/livereload.js")
-			if err != nil {
-				http.Error(w, "404 page not found", 404)
-				return
-			}
-			w.Header().Set("Content-Type", "application/javascript")
-			w.Write(b)
-			return
-		})
-		mux.Handle("/", lrs)
-		log.Fatal(http.ListenAndServe(":35729", mux))
-	}()
 
 	fsw, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -157,6 +141,7 @@ func main() {
 		)
 		w.Write([]byte(fmt.Sprintf(template, name, string(b))))
 	})
+	http.Handle("/livereload", lrs)
 
 	server := &http.Server{
 		Addr: *addr,
