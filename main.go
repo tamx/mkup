@@ -141,7 +141,11 @@ func main() {
 		)
 		w.Write([]byte(fmt.Sprintf(template, name, string(b))))
 	})
-	http.Handle("/livereload", lrs)
+	http.Handle("/livereload",
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				lrs.ServeHTTP(w, r)
+			}))
 
 	server := &http.Server{
 		Addr: *addr,
