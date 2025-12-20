@@ -56,7 +56,8 @@ const (
 )
 
 var (
-	addr = flag.String("http", ":8000", "HTTP service address (e.g., ':8000')")
+	addr        = flag.String("http", ":8000", "HTTP service address (e.g., ':8000')")
+	usehttpport = flag.Bool("usehttpport", false, "use livereload port with the same http port")
 )
 
 //go:embed _assets
@@ -153,6 +154,21 @@ func main() {
 			log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RequestURI())
 			http.DefaultServeMux.ServeHTTP(w, r)
 		}),
+	}
+
+	if *usehttpport == false {
+		go func() {
+			addr := ":35729"
+			server := &http.Server{
+				Addr: addr,
+				Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RequestURI())
+					http.DefaultServeMux.ServeHTTP(w, r)
+				}),
+			}
+			fmt.Fprintln(os.Stderr, "Listening at "+addr)
+			server.ListenAndServe()
+		}()
 	}
 
 	fmt.Fprintln(os.Stderr, "Listening at "+*addr)
