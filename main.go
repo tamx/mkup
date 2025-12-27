@@ -4,7 +4,6 @@ import (
 	"embed"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"mime"
 	"net/http"
@@ -124,7 +123,7 @@ func main() {
 			fs.ServeHTTP(w, r)
 			return
 		}
-		b, err := ioutil.ReadFile(filepath.Join(cwd, name))
+		b, err := os.ReadFile(filepath.Join(cwd, name))
 		if err != nil {
 			if os.IsNotExist(err) {
 				http.Error(w, "404 page not found", 404)
