@@ -36,9 +36,10 @@ const (
 <link rel="stylesheet" href="/_assets/github-dark.css" media="all">
 <script src="/_assets/highlight.min.js"></script>
 <script>hljs.highlightAll();</script>
-<script>document.write('<script src="http://'
+<script>document.write('<script src="'
+	+ location.protocol + '//'
     + (location.host || 'localhost')
-    + '/_assets/livereload.js?snipver=1"></'
+    + '%s/_assets/livereload.js?snipver=1"></'
     + 'script>')</script>
 </head>
 <body>
@@ -66,6 +67,10 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
 	cwd, _ := os.Getwd()
+	livereloadPortAddr := ":35729"
+	if *usehttpport == true {
+		livereloadPortAddr = ""
+	}
 
 	lrs := livereload.New("mkup")
 	defer lrs.Close()
@@ -139,7 +144,7 @@ func main() {
 			blackfriday.WithRenderer(renderer),
 			blackfriday.WithExtensions(extensions),
 		)
-		w.Write([]byte(fmt.Sprintf(template, name, string(b))))
+		w.Write([]byte(fmt.Sprintf(template, name, livereloadPortAddr, string(b))))
 	})
 	http.Handle("/livereload",
 		http.HandlerFunc(
@@ -155,17 +160,16 @@ func main() {
 		}),
 	}
 
-	if *usehttpport == false {
+	if livereloadPortAddr != "" {
 		go func() {
-			addr := ":35729"
 			server := &http.Server{
-				Addr: addr,
+				Addr: livereloadPortAddr,
 				Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.RequestURI())
 					http.DefaultServeMux.ServeHTTP(w, r)
 				}),
 			}
-			fmt.Fprintln(os.Stderr, "Listening at "+addr)
+			fmt.Fprintln(os.Stderr, "Listening at "+livereloadPortAddr)
 			server.ListenAndServe()
 		}()
 	}
